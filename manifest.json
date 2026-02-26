@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Clip to Chat",
+  "name": "DigestPage",
   "version": "1.0.0",
-  "description": "Quickly send webpage content to ChatGPT with custom prompts",
+  "description": "Extract and summarize webpage content with ChatGPT using custom prompts",
   "permissions": [
     "storage",
     "activeTab",
@@ -37,7 +37,7 @@
         "default": "Ctrl+Shift+Y",
         "mac": "Command+Shift+Y"
       },
-      "description": "Clip page content and open ChatGPT"
+      "description": "Digest page content and open ChatGPT"
     }
   }
 }

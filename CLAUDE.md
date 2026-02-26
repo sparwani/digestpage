@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-"Clip to Chat" is a Chrome Extension (Manifest V3) that extracts webpage content, prepends a user-configured prompt, and sends it to ChatGPT. No build system, bundler, or test framework — plain vanilla JavaScript loaded directly by Chrome.
+"DigestPage" is a Chrome Extension (Manifest V3) that extracts webpage content, prepends a user-configured prompt, and sends it to ChatGPT. No build system, bundler, or test framework — plain vanilla JavaScript loaded directly by Chrome.
 
 ## Development
 

@@ -1,4 +1,4 @@
-# Clip to Chat
+# DigestPage
 
 A Chrome extension that extracts webpage content and sends it to ChatGPT with a customizable prompt. Works with articles, YouTube transcripts, and any webpage.
 
