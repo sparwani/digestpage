@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clip to Chat</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Clip to Chat</h1>
+      <p class="shortcut">Press <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd> to clip</p>
+    </header>
+
+    <section class="toggle-section">
+      <label class="toggle-row">
+        <span class="toggle-label">Smart extract</span>
+        <div class="toggle-switch">
+          <input type="checkbox" id="smart-extract-toggle" checked>
+          <span class="toggle-slider"></span>
+        </div>
+      </label>
+    </section>
+
+    <section class="prompts-section">
+      <div class="section-header">
+        <h2>Prompts</h2>
+        <button id="add-prompt-btn" class="btn-icon" title="Add new prompt">+</button>
+      </div>
+      <ul id="prompts-list" class="prompts-list"></ul>
+    </section>
+
+    <!-- Add/Edit Prompt Form -->
+    <section id="prompt-form" class="prompt-form hidden">
+      <h3 id="form-title">Add Prompt</h3>
+      <input type="hidden" id="prompt-id">
+      <div class="form-group">
+        <label for="prompt-name">Name</label>
+        <input type="text" id="prompt-name" placeholder="e.g., Summarize" maxlength="30">
+      </div>
+      <div class="form-group">
+        <label for="prompt-text">Prompt</label>
+        <textarea id="prompt-text" placeholder="e.g., Please summarize the following:" rows="4"></textarea>
+        <div class="variables-hint">Variables: <code>{title}</code> <code>{url}</code> <code>{domain}</code> <code>{date}</code></div>
+      </div>
+      <div class="form-actions">
+        <button id="cancel-btn" class="btn btn-secondary">Cancel</button>
+        <button id="save-btn" class="btn btn-primary">Save</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
