@@ -2,19 +2,19 @@ const DEFAULT_PROMPTS = [
   {
     id: 'summarize',
     name: 'Summarize',
-    text: 'Please provide an in-depth summary of the following article from {domain} ("{title}"). Include the main thesis, key arguments, supporting evidence, and conclusions:',
+    text: 'Please summarize in detail the following article from {url} titled {title}. If this was a news article, don\'t strip out interesting anecdotes. Those often illuminate the main points of the story:',
     isActive: true
   },
   {
     id: 'key-points',
     name: 'Key Points',
-    text: 'Extract the main takeaways and key points from the following content. Present them as a clear, bulleted list:',
+    text: 'Extract the main takeaways and key points from the following article from {url} titled {title}. Present them as a clear, bulleted list:',
     isActive: false
   },
   {
     id: 'eli5',
     name: 'ELI5',
-    text: 'Explain the following content in simple terms that a 5-year-old could understand. Avoid jargon and use everyday analogies:',
+    text: 'Explain the following article from {url} titled {title} in simple terms that a 5-year-old could understand. Avoid jargon and use everyday analogies:',
     isActive: false
   }
 ];
