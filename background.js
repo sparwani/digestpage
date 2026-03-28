@@ -27,6 +27,51 @@ chrome.runtime.onInstalled.addListener(async () => {
   }
 });
 
+// Handle extract-only message from popup (copy to clipboard)
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'extract-text') {
+    extractCurrentTab().then(sendResponse);
+    return true; // keep channel open for async response
+  }
+});
+
+async function extractCurrentTab() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id || tab.url?.startsWith('chrome://') || tab.url?.startsWith('chrome-extension://')) {
+    return null;
+  }
+
+  const isYouTube = tab.url?.includes('youtube.com/watch');
+  const { smartExtract, includeTimestamps } = await chrome.storage.local.get(['smartExtract', 'includeTimestamps']);
+  const useSmartExtract = smartExtract !== false;
+
+  if (useSmartExtract && !isYouTube) {
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ['vendor/Readability.js']
+    });
+  }
+
+  let extractionFunc;
+  let args = [];
+  if (isYouTube) {
+    extractionFunc = extractYouTubeTranscript;
+    args = [includeTimestamps === true];
+  } else if (useSmartExtract) {
+    extractionFunc = extractWithReadability;
+  } else {
+    extractionFunc = extractPageText;
+  }
+
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: extractionFunc,
+    args
+  });
+
+  return results[0]?.result || null;
+}
+
 // Handle keyboard shortcut
 chrome.commands.onCommand.addListener(async (command) => {
   if (command === 'clip-to-chat') {
@@ -47,8 +92,8 @@ chrome.commands.onCommand.addListener(async (command) => {
       // Check if we're on YouTube
       const isYouTube = tab.url?.includes('youtube.com/watch');
 
-      // Check smart extract setting
-      const { smartExtract } = await chrome.storage.local.get('smartExtract');
+      // Check smart extract and timestamps settings
+      const { smartExtract, includeTimestamps } = await chrome.storage.local.get(['smartExtract', 'includeTimestamps']);
       const useSmartExtract = smartExtract !== false; // default true
 
       // If smart extract is on and not YouTube, inject Readability first
@@ -61,8 +106,10 @@ chrome.commands.onCommand.addListener(async (command) => {
 
       // Pick the right extraction function
       let extractionFunc;
+      let args = [];
       if (isYouTube) {
         extractionFunc = extractYouTubeTranscript;
+        args = [includeTimestamps === true];
       } else if (useSmartExtract) {
         extractionFunc = extractWithReadability;
       } else {
@@ -72,7 +119,8 @@ chrome.commands.onCommand.addListener(async (command) => {
       // Extract text from the page
       const results = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
-        func: extractionFunc
+        func: extractionFunc,
+        args
       });
 
       const pageText = results[0]?.result;
@@ -132,7 +180,7 @@ function extractPageText() {
 }
 
 // Function to extract YouTube transcript
-async function extractYouTubeTranscript() {
+async function extractYouTubeTranscript(includeTimestamps) {
   // First, expand the description if needed
   const expandButton = document.querySelector('ytd-text-inline-expander #expand');
   if (expandButton) {
@@ -149,28 +197,56 @@ async function extractYouTubeTranscript() {
 
   transcriptButton.click();
 
-  // Wait for transcript panel to load
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  // Poll for transcript segments to appear (up to 5 seconds)
+  let transcriptText = '';
+  for (let i = 0; i < 10; i++) {
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-  // Extract transcript segments
-  const segmentListRenderer = document.querySelector('ytd-transcript-segment-list-renderer');
-  if (!segmentListRenderer) {
-    return document.body.innerText?.replace(/\n{3,}/g, '\n\n').replace(/[ \t]+/g, ' ').trim();
+    // New YouTube format (PAmodern_transcript_view panel)
+    const newSegments = document.querySelectorAll('transcript-segment-view-model');
+    if (newSegments.length > 0) {
+      transcriptText = Array.from(newSegments).map(segment => {
+        const textSpan = segment.querySelector('span.yt-core-attributed-string');
+        const text = textSpan ? textSpan.textContent.trim() : '';
+        if (!text) return '';
+        if (includeTimestamps) {
+          const ts = segment.querySelector('.ytwTranscriptSegmentViewModelTimestamp')?.textContent?.trim();
+          return ts ? `[${ts}] ${text}` : text;
+        }
+        return text;
+      }).filter(text => text).join('\n\n');
+      break;
+    }
+
+    // Old YouTube format (ytd-transcript-segment-list-renderer)
+    const oldSegmentList = document.querySelector('ytd-transcript-segment-list-renderer');
+    if (oldSegmentList?.children?.[0]) {
+      const segments = Array.from(oldSegmentList.children[0].children);
+      transcriptText = segments.map(segment => {
+        const segDiv = segment.querySelector('div.segment');
+        if (!segDiv) return '';
+        const text = segDiv.textContent.trim();
+        if (includeTimestamps) {
+          const ts = segment.querySelector('.segment-timestamp')?.textContent?.trim();
+          return ts ? `[${ts}] ${text}` : text;
+        }
+        return text;
+      }).filter(text => text).join('\n\n');
+      break;
+    }
   }
 
-  const contentDiv = segmentListRenderer.children[0];
-  if (!contentDiv) {
+  if (!transcriptText) {
     return document.body.innerText?.replace(/\n{3,}/g, '\n\n').replace(/[ \t]+/g, ' ').trim();
   }
-
-  const segments = Array.from(contentDiv.children);
-  const transcriptText = segments.map(segment => {
-    const segDiv = segment.querySelector('div.segment');
-    return segDiv ? segDiv.textContent.trim() : '';
-  }).filter(text => text).join('\n\n');
 
   // Close the transcript panel
-  const closeButton = document.querySelector('ytd-engagement-panel-title-header-renderer #visibility-button button');
+  const panel = document.querySelector(
+    'ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"]'
+  ) || document.querySelector(
+    'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]'
+  );
+  const closeButton = panel?.querySelector('#visibility-button button');
   if (closeButton) {
     closeButton.click();
   }

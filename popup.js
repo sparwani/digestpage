@@ -23,12 +23,14 @@ let prompts = [];
 
 // DOM Elements
 const smartExtractToggle = document.getElementById('smart-extract-toggle');
+const timestampsToggle = document.getElementById('timestamps-toggle');
 const promptsList = document.getElementById('prompts-list');
 const promptForm = document.getElementById('prompt-form');
 const formTitle = document.getElementById('form-title');
 const promptIdInput = document.getElementById('prompt-id');
 const promptNameInput = document.getElementById('prompt-name');
 const promptTextInput = document.getElementById('prompt-text');
+const copyContentBtn = document.getElementById('copy-content-btn');
 const addPromptBtn = document.getElementById('add-prompt-btn');
 const cancelBtn = document.getElementById('cancel-btn');
 const saveBtn = document.getElementById('save-btn');
@@ -37,7 +39,33 @@ const saveBtn = document.getElementById('save-btn');
 document.addEventListener('DOMContentLoaded', async () => {
   await loadPrompts();
   await loadSmartExtract();
+  await loadTimestamps();
   renderPrompts();
+});
+
+// Copy page content to clipboard
+copyContentBtn.addEventListener('click', async () => {
+  copyContentBtn.textContent = 'Extracting...';
+  copyContentBtn.disabled = true;
+  try {
+    const text = await chrome.runtime.sendMessage({ action: 'extract-text' });
+    if (text) {
+      await navigator.clipboard.writeText(text);
+      copyContentBtn.textContent = 'Copied!';
+      copyContentBtn.classList.add('success');
+    } else {
+      copyContentBtn.textContent = 'Nothing to copy';
+      copyContentBtn.classList.add('error');
+    }
+  } catch (err) {
+    copyContentBtn.textContent = 'Failed to copy';
+    copyContentBtn.classList.add('error');
+  }
+  setTimeout(() => {
+    copyContentBtn.textContent = 'Copy page content';
+    copyContentBtn.classList.remove('success', 'error');
+    copyContentBtn.disabled = false;
+  }, 1500);
 });
 
 // Load smart extract setting
@@ -47,9 +75,19 @@ async function loadSmartExtract() {
   smartExtractToggle.checked = smartExtract !== false;
 }
 
-// Wire toggle change
+// Wire toggle changes
 smartExtractToggle.addEventListener('change', async () => {
   await chrome.storage.local.set({ smartExtract: smartExtractToggle.checked });
+});
+
+// Load timestamps setting
+async function loadTimestamps() {
+  const { includeTimestamps } = await chrome.storage.local.get('includeTimestamps');
+  timestampsToggle.checked = includeTimestamps === true; // default false
+}
+
+timestampsToggle.addEventListener('change', async () => {
+  await chrome.storage.local.set({ includeTimestamps: timestampsToggle.checked });
 });
 
 // Load prompts from storage

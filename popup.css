@@ -45,6 +45,44 @@ kbd {
   box-shadow: 0 1px 0 #ccc;
 }
 
+/* Copy button */
+.copy-section {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.btn-copy {
+  width: 100%;
+  padding: 10px 16px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid #ddd;
+  background: #f9f9f9;
+  color: #333;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-copy:hover {
+  background: #f0f0f0;
+  border-color: #ccc;
+}
+
+.btn-copy.success {
+  background: #e8f5f1;
+  border-color: #10a37f;
+  color: #10a37f;
+}
+
+.btn-copy.error {
+  background: #fee;
+  border-color: #c00;
+  color: #c00;
+}
+
 /* Toggle */
 .toggle-section {
   margin-bottom: 16px;
@@ -57,6 +95,15 @@ kbd {
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
+}
+
+.toggle-row + .toggle-row {
+  margin-top: 10px;
+}
+
+.toggle-hint {
+  color: #999;
+  font-weight: 400;
 }
 
 .toggle-label {
